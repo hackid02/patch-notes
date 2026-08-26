@@ -1,0 +1,78 @@
+{
+  "version": "1.1",
+  "window": { "from": "2026-08-17", "to": "2026-08-23" },
+  "generatedAt": "2026-08-23T18:14:37Z",
+  "meta": {
+    "trend": "rising",
+    "summary": "The community found its moment: the Friday clip chain turned lurkers into regulars. Reply times under an hour correlated with the week's two biggest threads.",
+    "drivers": [
+      { "label": "Friday clip chain", "direction": "positive", "detail": "Fans reposting their best moments drove 3.1x more quote-tweets than last week." },
+      { "label": "First-hour replies", "direction": "positive", "detail": "Threads where the creator replied within 60 minutes averaged 4x the comments." },
+      { "label": "Merch restock questions", "direction": "negative", "detail": "Repeated restock questions with no official answer — mild frustration building." }
+    ],
+    "recurringQuestions": ["when is the merch restock?", "next community night date?", "will there be a viewers' tournament?"],
+    "recommendedActions": ["Pin a merch restock date to kill repeat questions", "Make the clip chain a weekly ritual", "Draft a viewers' tournament announcement"]
+  },
+  "balance": {
+    "buffs": [
+      { "metric": "engagement", "platform": "X", "delta": "+22.4%", "note": "driven by the Friday clip chain" },
+      { "metric": "followers", "platform": "X", "delta": "+4.2%" }
+    ],
+    "nerfs": [{ "metric": "views", "platform": "X", "delta": "-3.1%", "note": "midweek dip before Friday spike" }],
+    "dataSince": "2026-08-10"
+  },
+  "champions": [
+    { "rank": 1, "name": "zoe_aims", "clusterId": "c_133", "platforms": ["x", "discord"], "tier": "vip", "score": 128, "momentum": 3 },
+    { "rank": 2, "name": "marcus_gg", "clusterId": "c_041", "platforms": ["x"], "tier": "regular", "score": 96, "momentum": -1 },
+    { "rank": 3, "name": "clipwizard", "clusterId": "c_205", "platforms": ["x", "discord"], "score": 88, "momentum": 3 },
+    { "rank": 4, "name": "pixelfade", "clusterId": "c_017", "platforms": ["x", "discord"], "score": 77, "momentum": -2 },
+    { "rank": 5, "name": "screenViper", "clusterId": "c_402", "platforms": ["x"], "score": 64 },
+    { "rank": 6, "name": "loyal_tom", "clusterId": "c_002", "platforms": ["discord"], "tier": "vip", "score": 58, "momentum": -3 },
+    { "rank": 7, "name": "nova.fan", "clusterId": "c_310", "platforms": ["discord"], "score": 47 },
+    { "rank": 8, "name": "turbo_n8", "clusterId": "c_500", "platforms": ["x"], "score": 39 },
+    { "rank": 9, "name": "kendra_v", "clusterId": "c_074", "platforms": ["x"], "score": 33, "momentum": -1 },
+    { "rank": 10, "name": "andre_waves", "clusterId": "c_089", "platforms": ["x"], "score": 29, "momentum": -5 }
+  ],
+  "fanOfThePatch": {
+    "name": "zoe_aims",
+    "clusterId": "c_133",
+    "arc": [
+      { "when": "2026-08-17", "event": "first reply on the Monday thread" },
+      { "when": "2026-08-19", "event": "posted a clip tagging the brand — 214 likes" },
+      { "when": "2026-08-21", "event": "joined Discord, sparked the clip chain in #highlights" },
+      { "when": "2026-08-23", "event": "#1 on the weekly leaderboard, marked VIP" }
+    ],
+    "why": "Exploded from first interaction to #1 in seven days, and single-handedly started the Friday clip chain that lifted engagement +22%."
+  },
+  "treasury": { "lapsedBuyers": 7, "note": "7 past merch buyers quiet 30+ days — a restock announcement would re-activate them." },
+  "guardrails": [
+    "Never auto-sends: all content awaits human approval",
+    "Respects memory: no merch-date promises until restock confirmed",
+    "Respects memory: keep roasts friendly — community preference",
+    "Rewind patches flag sentiment scope; windowed metrics are authoritative"
+  ],
+  "stats": { "fansRanked": 10, "questionsSurfaced": 3, "platformsCovered": 2 },
+  "provenance": [
+    "list_platform_connections",
+    "get_account_analytics",
+    "activity_summary ×3",
+    "get_fan_activity ×2",
+    "trigger_skill: sentiment-cross-platform",
+    "check_skill_generation ×4",
+    "lookup_socials",
+    "search_memories",
+    "get_brand_voice"
+  ],
+  "announcement": {
+    "x": "📋 Patch Notes v1.1 — this week\n\n📈 engagement +22.4% on X\n🧭 community meta: rising\n🏆 Rising champions: zoe_aims, marcus_gg, clipwizard\n\nFull patch notes in replies 👇",
+    "discordEmbed": {
+      "title": "📋 Patch Notes v1.1",
+      "description": "The community found its moment: the Friday clip chain turned lurkers into regulars.",
+      "fields": [
+        { "name": "📈 Buffs", "value": "engagement +22.4% X · followers +4.2% X" },
+        { "name": "📉 Nerfs", "value": "views -3.1% X" },
+        { "name": "🏆 Rising Champions", "value": "zoe_aims, marcus_gg, clipwizard" }
+      ]
+    }
+  }
+}

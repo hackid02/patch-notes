@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "window": { "from": "2026-08-10", "to": "2026-08-16" },
+  "generatedAt": "2026-08-16T18:02:11Z",
+  "meta": {
+    "trend": "stable",
+    "summary": "A holding-pattern week. Engagement was steady but flat; the community is active yet waiting for a moment to rally around.",
+    "drivers": [
+      { "label": "Consistent daily threads", "direction": "positive", "detail": "Regular posting kept the core ~40 fans checking in daily." },
+      { "label": "No tentpole moment", "direction": "negative", "detail": "Nothing to clip, quote or memе about — mentions stayed flat." }
+    ],
+    "recurringQuestions": ["when's the next community night?", "are you doing any giveaways soon?"],
+    "recommendedActions": ["Announce one flagship weekly event", "Reply within the first hour of posting"]
+  },
+  "balance": {
+    "buffs": [{ "metric": "followers", "platform": "X", "delta": "+0.8%" }],
+    "nerfs": [{ "metric": "engagement", "platform": "X", "delta": "-1.6%", "note": "quiet midweek stretch" }],
+    "dataSince": "2026-08-10"
+  },
+  "champions": [
+    { "rank": 1, "name": "marcus_gg", "clusterId": "c_041", "platforms": ["x"], "tier": "regular", "score": 71 },
+    { "rank": 2, "name": "pixelfade", "clusterId": "c_017", "platforms": ["x", "discord"], "score": 64 },
+    { "rank": 3, "name": "loyal_tom", "clusterId": "c_002", "platforms": ["discord"], "tier": "vip", "score": 59 },
+    { "rank": 4, "name": "zoe_aims", "clusterId": "c_133", "platforms": ["x"], "score": 44 },
+    { "rank": 5, "name": "andre_waves", "clusterId": "c_089", "platforms": ["x"], "score": 40 },
+    { "rank": 6, "name": "clipwizard", "clusterId": "c_205", "platforms": ["x", "discord"], "score": 36 },
+    { "rank": 7, "name": "nova.fan", "clusterId": "c_310", "platforms": ["discord"], "score": 31 },
+    { "rank": 8, "name": "kendra_v", "clusterId": "c_074", "platforms": ["x"], "score": 28 },
+    { "rank": 9, "name": "stealthyB", "clusterId": "c_156", "platforms": ["x"], "score": 22 },
+    { "rank": 10, "name": "dailydale", "clusterId": "c_011", "platforms": ["discord"], "score": 19 }
+  ],
+  "guardrails": [
+    "Never auto-sends: all content awaits human approval",
+    "Respects memory: no merch-date promises until restock confirmed",
+    "Respects memory: keep roasts friendly — community preference"
+  ],
+  "stats": { "fansRanked": 10, "questionsSurfaced": 2, "platformsCovered": 2 },
+  "provenance": [
+    "list_platform_connections",
+    "get_account_analytics",
+    "activity_summary ×3",
+    "trigger_skill: sentiment-cross-platform",
+    "check_skill_generation ×3",
+    "search_memories",
+    "get_brand_voice"
+  ],
+  "announcement": {
+    "x": "📋 Patch Notes v1.0 — week 1\n\n📈 followers +0.8% on X\n🧭 community meta: stable\n🏆 Rising champions: marcus_gg, pixelfade, loyal_tom\n\nFull patch notes in replies 👇",
+    "discordEmbed": {
+      "title": "📋 Patch Notes v1.0",
+      "description": "A holding-pattern week. The community is active yet waiting for a moment to rally around.",
+      "fields": [{ "name": "🏆 Rising Champions", "value": "marcus_gg, pixelfade, loyal_tom" }]
+    }
+  }
+}
