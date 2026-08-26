@@ -24,20 +24,19 @@ export async function POST(req: Request) {
 
     if (target === "x") {
       if (!patch.announcement.x) return NextResponse.json({ error: "no X draft" }, { status: 400 });
-      const text = patch.announcement.x;
-      // defensive payload shapes — post_content schema confirmed at demo time
-      const attempts: any[] = [
-        { posts: [{ platform: "x", content: text, ...(mode === "schedule" ? { scheduledAt } : {}) }] },
-        { posts: [{ platform: "x", text, ...(mode === "schedule" ? { scheduledAt } : {}) }] },
-      ];
-      let lastErr = "";
-      for (const payload of attempts) {
-        try {
-          const r: any = await callTool("post_content", payload);
-          return NextResponse.json({ ok: true, target, mode, result: r });
-        } catch (e: any) { lastErr = e?.message ?? String(e); }
+      // twitter variant (verified): { platform:"twitter", message, imageUrls?, scheduledAt?, poll?{options≤4×25c} }
+      try {
+        const r: any = await callTool("post_content", {
+          posts: [{
+            platform: "twitter",
+            message: patch.announcement.x,
+            ...(mode === "schedule" ? { scheduledAt } : {}),
+          }],
+        });
+        return NextResponse.json({ ok: true, target, mode });
+      } catch (e: any) {
+        return NextResponse.json({ error: `X post failed — ${e?.message ?? String(e)}` }, { status: 502 });
       }
-      return NextResponse.json({ error: `X post failed — ${lastErr}` }, { status: 502 });
     }
 
     if (target === "discord") {
