@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Patch } from "@/lib/patch";
 import PatchNotes from "./PatchNotes";
@@ -88,13 +89,14 @@ export default function GenerateForm() {
       )}
       {error && <p className="mt-3 text-xs text-rose-400">❌ {error}</p>}
 
-      {preview && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-void/95 backdrop-blur-sm">
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/60 bg-void/90 px-5 py-3">
+      {/* portal: this overlay must escape animated/transformed ancestors, or `fixed` pins to the little form card instead of the viewport */}
+      {preview && createPortal(
+        <div className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-void/95 text-left backdrop-blur-sm">
+          <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-line/60 bg-void/90 px-5 py-3">
             <p className="font-mono text-[10px] font-bold tracking-[0.25em] text-brand-soft uppercase">
               ⚡ live preview — your FanBase · your org's credits · not saved to the showcase series
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <DraftActions draft={{ announcement: preview.announcement, versionLabel: "preview" }} />
               <button onClick={() => setPreview(null)}
                 className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold text-zinc-300 hover:text-white transition">
@@ -103,7 +105,8 @@ export default function GenerateForm() {
             </div>
           </div>
           <PatchNotes patch={preview} />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
