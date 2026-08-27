@@ -45,5 +45,8 @@ next-env.d.ts
 
 # --- secrets & runtime state (NEVER commit) ---
 .fanbase-tokens.json
-data/
+data/fanbase-client.json
+data/fb-session.json
+# NOTE: data/patches/*.json IS committed — real generated artifacts power the read-only
+# showcase deploy and give fresh clones the full product with zero credentials.
 *.tsbuildinfo

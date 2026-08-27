@@ -1,3 +1,4 @@
+"use client";
 import type { Patch, PatchDiff } from "@/lib/patch";
 
 const platformColor: Record<string, string> = {
@@ -177,6 +178,9 @@ export default function PatchNotes({ patch, diff, actions }: { patch: Patch; dif
       <Reveal delay={320}>
         <Section index="03" title="🏆 Rising Champions">
           <ol className="overflow-hidden rounded-2xl border border-line">
+            {patch.champions.length === 0 && (
+              <li className="px-5 py-6 text-sm text-zinc-500">No ranked fans this window — quiet community.</li>
+            )}
             {patch.champions.map((c, i) => (
               <li
                 key={c.clusterId + c.rank}
@@ -305,7 +309,7 @@ export default function PatchNotes({ patch, diff, actions }: { patch: Patch; dif
             {patch.guardrails.map((g, i) => <p key={i} className="text-[11px] text-zinc-500">✓ {g}</p>)}
           </div>
           <p className="mt-4 text-[11px] text-zinc-600">
-            Generated {new Date(patch.generatedAt).toLocaleString()} · <span className="font-semibold text-brand-soft">Patch Notes</span> · powered by FanBase MCP
+            Generated {new Date(patch.generatedAt).toLocaleString("en-GB", { timeZone: "UTC" })} UTC · <span className="font-semibold text-brand-soft">Patch Notes</span> · powered by FanBase MCP
           </p>
         </footer>
       </Reveal>

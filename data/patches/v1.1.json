@@ -1,0 +1,161 @@
+{
+  "version": "1.1",
+  "window": {
+    "from": "2026-08-18",
+    "to": "2026-08-24"
+  },
+  "generatedAt": "2026-08-26T13:38:08.024Z",
+  "meta": {
+    "trend": "cooling",
+    "summary": "5 community interactions from 5 distinct voices (2026-08-18 → 2026-08-24). Volume cooling at 0.05x the prior window.",
+    "drivers": [
+      {
+        "label": "“Split a hackathon prize with two teammates on a handshake. We won. Suddenly one …”",
+        "direction": "positive",
+        "detail": "reply by The Path on twitter — 2026-08-18"
+      },
+      {
+        "label": "“@FundedNext @fnfutures Done \n@web3_YSL \n@trader1sz https://t.co/Za7I5SO3US…”",
+        "direction": "positive",
+        "detail": "reply by Ib on twitter — 2026-08-18"
+      }
+    ],
+    "recurringQuestions": [],
+    "recommendedActions": [
+      "Quote-reply your top champion's best take — make the leaderboard mean something"
+    ]
+  },
+  "balance": {
+    "buffs": [
+      {
+        "metric": "followers",
+        "platform": "twitter",
+        "delta": "+3.1%"
+      }
+    ],
+    "nerfs": [
+      {
+        "metric": "community activity",
+        "platform": "all",
+        "delta": "-94.6%",
+        "note": "5 vs 92 interactions · vs 2026-08-11–2026-08-17"
+      }
+    ],
+    "dataSince": "2026-08-22"
+  },
+  "champions": [
+    {
+      "rank": 1,
+      "name": "The Path",
+      "clusterId": "e7326ae5-8f02-4c75-a990-c2728b75f244",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 1
+    },
+    {
+      "rank": 2,
+      "name": "zhezynnho",
+      "clusterId": "441e23b4-7225-40fa-a8c6-c208e47f3828",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 1
+    },
+    {
+      "rank": 3,
+      "name": "Ib",
+      "clusterId": "b1a80172-1459-4a51-a33d-4bf435f1fa72",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 1
+    },
+    {
+      "rank": 4,
+      "name": "Mr Orange🍊",
+      "clusterId": "5e6b5c10-810a-40db-9f71-b433f1f57cf2",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 1
+    },
+    {
+      "rank": 5,
+      "name": "ileri is good𖣂",
+      "clusterId": "057fe7e4-e887-422d-ab41-ed238828694b",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 1
+    }
+  ],
+  "fanOfThePatch": {
+    "name": "The Path",
+    "clusterId": "e7326ae5-8f02-4c75-a990-c2728b75f244",
+    "arc": [
+      {
+        "when": "2026-08-18",
+        "event": "reply on twitter: “Split a hackathon prize with two teammates on a handshake. We won. Suddenly one guy rememb…”"
+      }
+    ],
+    "why": "The Path led the community this window — 1 interaction on twitter. Signature moment: “Split a hackathon prize with two teammates on a handshake. We won. Suddenly one guy remembered doing sixty percent of th…”"
+  },
+  "guardrails": [
+    "Never auto-sends: all content awaits human approval (send_inbox_message excluded by design)",
+    "No stored content restrictions found",
+    "Meta report derived from real community comments (sentiment skill unavailable/blocked — 0 extra credits burned)",
+    "Timeline rebuilt from post IDs: FanBase backfill stamps events with ingestion time — we restore true dates",
+    "Rewind patch: historical window reconstructed from backfilled activity"
+  ],
+  "stats": {
+    "fansRanked": 5,
+    "questionsSurfaced": 0,
+    "platformsCovered": 1
+  },
+  "provenance": [
+    "query_activity · 443ms ✓",
+    "get_account_analytics · 195ms ✓",
+    "get_analytics_trend · 198ms ✓",
+    "trigger_skill · 533ms ✓",
+    "check_skill_generation · 210ms ✓",
+    "check_skill_generation · 213ms ✓",
+    "check_skill_generation · 199ms ✓",
+    "check_skill_generation · 209ms ✓",
+    "check_skill_generation · 204ms ✓",
+    "check_skill_generation · 197ms ✓",
+    "check_skill_generation · 465ms ✓",
+    "check_skill_generation · 202ms ✓",
+    "check_skill_generation · 220ms ✓",
+    "check_skill_generation · 298ms ✓",
+    "check_skill_generation · 204ms ✓",
+    "check_skill_generation · 231ms ✓",
+    "search_memories · 955ms ✓",
+    "get_brand_voice · 195ms ✓"
+  ],
+  "announcement": {
+    "x": "📋 Patch Notes v1.1 — community rewind\n\n📈 followers +3.1% · twitter\n🧭 community meta: cooling\n🏆 Rising champions: The Path, zhezynnho, Ib\n🌟 Fan of the Patch: The Path\n\nFull patch notes in replies 👇",
+    "discordEmbed": {
+      "title": "📋 Patch Notes v1.1",
+      "description": "5 community interactions from 5 distinct voices (2026-08-18 → 2026-08-24). Volume cooling at 0.05x the prior window.",
+      "fields": [
+        {
+          "name": "📈 Buffs",
+          "value": "followers +3.1% · twitter"
+        },
+        {
+          "name": "📉 Nerfs",
+          "value": "community activity -94.6% all"
+        },
+        {
+          "name": "🏆 Rising Champions",
+          "value": "The Path, zhezynnho, Ib"
+        },
+        {
+          "name": "🌟 Fan of the Patch",
+          "value": "The Path"
+        }
+      ]
+    }
+  }
+}

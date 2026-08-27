@@ -1,0 +1,9 @@
+# never ship secrets or runtime state into a deployment bundle
+.fanbase-tokens.json
+data/fanbase-client.json
+data/fb-session.json
+node_modules
+.next
+.vercel
+*.tsbuildinfo
+next-env.d.ts

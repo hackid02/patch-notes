@@ -1,6 +1,7 @@
 import { loadPatch, previousVersion, listPatchVersions } from "@/lib/store";
 import { diffPatches } from "@/lib/pipeline";
-import { isConnected } from "@/lib/auth";
+import { hasOwnerSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 import PatchNotes from "@/components/PatchNotes";
 import DraftActions from "@/components/DraftActions";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -15,13 +16,14 @@ export default async function PatchPage({
   searchParams: Promise<{ vs?: string }>;
 }) {
   const [{ version: rawVersion }, sp] = await Promise.all([params, searchParams]);
-  const version = rawVersion.replace("_", ".");
+  const version = rawVersion.replaceAll("_", ".");
+  if (!/^\d+(\.\d+)?$/.test(version)) return notFound();
   const patch = loadPatch(version);
   if (!patch) return notFound();
 
   // compare target: explicit ?vs=… else the previous patch in the archive
   const all = listPatchVersions();
-  const vsV = (sp.vs ?? previousVersion(patch.version) ?? "").replace("_", ".") || null;
+  const vsV = (sp.vs ?? previousVersion(patch.version) ?? "").replaceAll("_", ".") || null;
   const prev = vsV && vsV !== patch.version ? loadPatch(vsV) : null;
   const diff = prev ? diffPatches(prev, patch) : undefined;
 
@@ -30,7 +32,7 @@ export default async function PatchPage({
     ? {
         ...patch,
         champions: patch.champions.map((c) => {
-          const old = prev.champions.find((p) => p.name === c.name);
+          const old = prev.champions.find((p) => p.clusterId === c.clusterId || p.name.toLowerCase() === c.name.toLowerCase());
           return { ...c, momentum: c.momentum ?? (old ? old.rank - c.rank : undefined) };
         }),
       }
@@ -64,7 +66,14 @@ export default async function PatchPage({
       <PatchNotes
         patch={view}
         diff={diff}
-        actions={isConnected() ? <DraftActions version={patch.version} /> : undefined}
+        actions={
+          // publish buttons only exist for the actual owner, and never on read-only showcase deploys
+          process.env.NEXT_PUBLIC_DEMO_READONLY === "1"
+            ? undefined
+            : hasOwnerSession((await cookies()).get("fb_connected")?.value)
+              ? <DraftActions version={patch.version} />
+              : undefined
+        }
       />
 
       {all.length > 1 && (

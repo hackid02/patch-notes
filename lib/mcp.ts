@@ -7,12 +7,14 @@
  *   (unset)              -> live calls only
  */
 import { createHash } from "crypto";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "fs";
 import path from "path";
+import type { SessionCtx } from "./session";
 
 const MCP_URL = process.env.FANBASE_MCP_URL ?? "https://api.copilot.fanbase.gg/mcp";
 const FIXTURE_DIR = path.join(process.cwd(), "fixtures");
 const MODE = process.env.FIXTURE_MODE as "record" | "replay" | undefined;
+const TOKEN_FILE = path.join(process.cwd(), ".fanbase-tokens.json");
 
 let rpcId = 0;
 
@@ -47,41 +49,66 @@ function fixturePath(tool: string, args: unknown) {
  *  refresh token is treated as theft by FanBase and revokes the whole token family. */
 let refreshing: Promise<string> | null = null;
 
-async function accessToken(): Promise<string> {
-  const tokenFile = path.join(process.cwd(), ".fanbase-tokens.json");
-  if (!existsSync(tokenFile))
+async function doRefresh(t: any): Promise<any> {
+  const res = await fetch("https://api.copilot.fanbase.gg/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: t.client_id,
+      refresh_token: t.refresh_token,
+      resource: "https://api.copilot.fanbase.gg/mcp",
+    }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new McpError("refresh_failed", JSON.stringify(json), res.status);
+  // ROTATION: the newest refresh token replaces the old one (reuse = family revocation)
+  return { ...t, ...json, refresh_token: json.refresh_token ?? t.refresh_token, saved_at: new Date().toISOString() };
+}
+
+const tokenFresh = (t: { saved_at: string; expires_in?: number }) => {
+  // trust the server-issued expires_in (10-min safety margin, 60s floor)
+  const ttlMs = Math.max(60_000, Number(t.expires_in ?? 3600) * 1000);
+  return Date.now() - new Date(t.saved_at).getTime() < ttlMs - 600_000;
+};
+
+async function accessToken(ctx?: SessionCtx, force = false): Promise<string> {
+  // per-request session (multi-user web flow — cookies) takes priority
+  if (ctx) {
+    if (!force && tokenFresh(ctx.rec)) return ctx.rec.access_token;
+    const next = await doRefresh(ctx.rec);
+    ctx.rec = next;      // persist happens at response time via persistSessionIfDirty
+    ctx.dirty = true;
+    return next.access_token;
+  }
+  // owner file mode (local dev / scripts)
+  if (!existsSync(TOKEN_FILE))
     throw new McpError("no_tokens", "Run `node scripts/oauth-handshake.mjs` first.");
-  const t = JSON.parse(readFileSync(tokenFile, "utf8"));
-  const ageMs = Date.now() - new Date(t.saved_at).getTime();
-  if (ageMs < 50 * 60 * 1000) return t.access_token; // ~1h TTL, 10-min safety margin
+  const t = JSON.parse(readFileSync(TOKEN_FILE, "utf8"));
+  if (!force && tokenFresh(t)) return t.access_token;
 
-  refreshing ??= (async () => {
-    const res = await fetch("https://api.copilot.fanbase.gg/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        client_id: t.client_id,
-        refresh_token: t.refresh_token,
-        resource: "https://api.copilot.fanbase.gg/mcp",
-      }),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new McpError("refresh_failed", JSON.stringify(json), res.status);
-    // ROTATION: persist the newest refresh token atomically, immediately.
-    const next = { ...t, ...json, refresh_token: json.refresh_token ?? t.refresh_token, saved_at: new Date().toISOString() };
-    writeFileSync(tokenFile, JSON.stringify(next, null, 2));
+  refreshing ??= doRefresh(t).then((next) => {
+    const tmp = `${TOKEN_FILE}.tmp`;
+    writeFileSync(tmp, JSON.stringify(next, null, 2));
+    renameSync(tmp, TOKEN_FILE);
     return next.access_token as string;
-  })().finally(() => { refreshing = null; });
-
+  }).finally(() => { refreshing = null; });
   return refreshing;
 }
 
-/** Call one MCP tool. Back off politely on 429 (per-user ~20 calls/min budget). */
+/** Call BEFORE doing pipeline work: refreshes an expiring session up-front so the
+ *  fresh tokens are set on THIS response's cookies (streams can't set cookies mid-flight). */
+export async function ensureFreshSession(ctx: SessionCtx): Promise<void> {
+  if (!tokenFresh(ctx.rec)) await accessToken(ctx, true);
+}
+
+/** Call one MCP tool. Back off politely on 429 (per-user ~20 calls/min budget).
+ *  ctx = the calling user's session (multi-user web); omitted = owner file mode (local dev). */
 export async function callTool<T = unknown>(
   tool: string,
   args: Record<string, unknown> = {},
-  attempt = 0
+  attempt = 0,
+  ctx?: SessionCtx
 ): Promise<T> {
   const fp = fixturePath(tool, args);
 
@@ -96,7 +123,7 @@ export async function callTool<T = unknown>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json, text/event-stream",
-      Authorization: `Bearer ${await accessToken()}`,
+      Authorization: `Bearer ${await accessToken(ctx)}`,
     },
     body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method: "tools/call", params: { name: tool, arguments: args } }),
   });
@@ -107,7 +134,15 @@ export async function callTool<T = unknown>(
     await new Promise((r) => setTimeout(r, 2 ** attempt * 3000));
     return callTool(tool, args, attempt + 1);
   }
-  if (res.status === 401) { callLog.push(`${tool} · ${ms()}ms ✗ 401`); throw new McpError("unauthorized", "Re-run oauth-handshake (consent revoked?)", 401); }
+  if (res.status === 401) {
+    callLog.push(`${tool} · ${ms()}ms ✗ 401`);
+    // clock said fresh but server rejected — force ONE rotation-aware refresh and retry once
+    if (attempt === 0) {
+      try { await accessToken(ctx, true); return callTool(tool, args, 1, ctx); } catch { /* fall through */ }
+      throw new McpError("unauthorized", "Token rejected after refresh — reconnect FanBase (consent revoked?)", 401);
+    }
+    throw new McpError("unauthorized", "Reconnect FanBase (consent revoked?)", 401);
+  }
   if (!res.ok) { callLog.push(`${tool} · ${ms()}ms ✗ ${res.status}`); throw new McpError("http_error", `${tool} -> ${res.status}`, res.status); }
 
   const raw = await res.text();
@@ -118,6 +153,13 @@ export async function callTool<T = unknown>(
   if (json.error) { callLog.push(`${tool} · ${ms()}ms ✗ rpc`); throw new McpError("rpc_error", JSON.stringify(json.error)); }
 
   const result = json.result as T;
+  // FanBase returns tool-level failures as HTTP 200 + result.isError:true (e.g. schema rejection).
+  // Surface them as errors so callers can distinguish schema-rejected from delivered-but-flaky.
+  if ((result as any)?.isError) {
+    callLog.push(`${tool} · ${ms()}ms ✗ tool`);
+    const txt = (result as any)?.content?.[0]?.text;
+    throw new McpError("tool_error", typeof txt === "string" ? txt : `${tool} rejected`);
+  }
   callLog.push(`${tool} · ${ms()}ms ✓`);
   if (MODE === "record") {
     mkdirSync(FIXTURE_DIR, { recursive: true });
@@ -130,11 +172,12 @@ export async function callTool<T = unknown>(
 export async function pollJob<T = unknown>(
   checkTool: string,
   jobArgs: Record<string, unknown>,
-  { timeoutMs = 120_000, intervalMs = 4_000 } = {}
+  { timeoutMs = 120_000, intervalMs = 4_000 } = {},
+  ctx?: SessionCtx
 ): Promise<T> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const r = unwrap(await callTool(checkTool, jobArgs)) as { status?: string; state?: string; analysis?: unknown; result?: unknown };
+    const r = unwrap(await callTool(checkTool, jobArgs, 0, ctx)) as { status?: string; state?: string; analysis?: unknown; result?: unknown };
     if (r?.status === "completed" || r?.status === "failed" || r?.state === "completed") return r as T;
     if (r?.analysis || r?.result) return r as T; // payload present without explicit status
     if (Date.now() > deadline) throw new McpError("poll_timeout", `${checkTool} timed out`);

@@ -14,8 +14,9 @@
  */
 import { callTool, pollJob, resetCallLog, getCallLog, unwrap } from "./mcp";
 import type { Patch, PatchDiff } from "./patch";
+import type { SessionCtx } from "./session";
 
-const LIVE_PACE_MS = 1500; // ~20 calls/min budget incl. skill polls; replay mode skips pacing
+const LIVE_PACE_MS = 1500; // global delay between live calls (≈40/min ceiling); pollJob's 9s interval dominates the true rate under the ~20 calls/min budget. Replay mode skips pacing.
 const isReplay = () => process.env.FIXTURE_MODE === "replay";
 
 export interface PatchRequest {
@@ -24,6 +25,7 @@ export interface PatchRequest {
   to: string;   // ISO date (exclusive end is fine either way — we filter inclusive by day)
   maxChampions?: number;
   onStage?: (msg: string) => void;
+  ctx?: SessionCtx; // the connecting user's session — their org, their credits (omitted = owner file mode)
 }
 
 /* ---------- helpers ---------- */
@@ -37,8 +39,8 @@ const inWindow = (at: number | null, from: string, to: string) =>
 
 const pace = async () => { if (!isReplay()) await new Promise((r) => setTimeout(r, LIVE_PACE_MS)); };
 
-async function safeCall(tool: string, args: Record<string, unknown>, fallback: any) {
-  try { return unwrap(await callTool(tool, args)); } catch { return fallback; }
+async function safeCall(tool: string, args: Record<string, unknown>, fallback: any, ctx?: SessionCtx) {
+  try { return unwrap(await callTool(tool, args, 0, ctx)); } catch { return fallback; }
 }
 
 /* ---------- snowflake time-rebuild: the fix for FanBase's ignored window params ---------- */
@@ -63,7 +65,7 @@ interface Ev {
 
 function toEv(e: any): Ev {
   const platform = str(e?.platform) || "unknown";
-  const epoch = platform === "discord" ? DISCORD_EPOCH : X_EPOCH;
+  const epoch = /discord/i.test(platform) ? DISCORD_EPOCH : X_EPOCH;
   const src = e?.sourceId ?? e?.metadata?.tweetId;
   const decoded = snowflakeMs(src, epoch);
   const created = Date.parse(e?.createdAt ?? "");
@@ -80,31 +82,35 @@ function toEv(e: any): Ev {
 }
 
 /** Fetch ALL activity once, paginated, then window client-side (window params are ignored). */
-async function fetchAllEvents(onStage?: (s: string) => void): Promise<Ev[]> {
+async function fetchAllEvents(ctx?: SessionCtx): Promise<{ events: Ev[]; capped: boolean }> {
   const events: Ev[] = [];
+  let capped = false;
   for (let page = 1; page <= 5; page++) {
-    const res = await safeCall("query_activity", { limit: 100, page }, null);
-    const batch = arr(res).map(toEv).filter((e) => e.at !== null || e.fan !== "unknown");
+    const res = await safeCall("query_activity", { limit: 100, page }, null, ctx);
+    const raw = arr(res);
+    // paginate on RAW length — filtering first would stop a page early and silently drop history
+    const batch = raw.map(toEv).filter((e) => e.at !== null || e.fan !== "unknown");
     events.push(...batch);
     const total = num(res?.total);
-    const got = (page - 1) * 100 + batch.length;
-    if (batch.length < 100 || (total !== null && got >= total)) break;
+    const got = (page - 1) * 100 + raw.length;
+    if (raw.length < 100 || (total !== null && got >= total)) break;
+    if (page === 5) { capped = true; break; } // feed deeper than our fetch window — disclose it
     await pace();
   }
-  return events;
+  return { events, capped };
 }
 
 /* ---------- balance: KPI trends when they exist, honest activity deltas otherwise ---------- */
-async function pullBalance(from: string, to: string, all: Ev[]): Promise<Patch["balance"]> {
+async function pullBalance(from: string, to: string, all: Ev[], ctx?: SessionCtx): Promise<Patch["balance"]> {
   const balance: Patch["balance"] = { buffs: [], nerfs: [], dataSince: undefined };
 
-  const accounts = arr((await safeCall("get_account_analytics", {}, null)) ?? []);
+  const accounts = arr((await safeCall("get_account_analytics", {}, null, ctx)) ?? []);
   for (const a of accounts) {
     const connectionId = str(a?.connectionId);
     const platform = str(a?.platform) || "unknown";
     if (!connectionId) continue;
     await pace();
-    const trend = await safeCall("get_analytics_trend", { connectionId, metric: "followers", from, to }, null);
+    const trend = await safeCall("get_analytics_trend", { connectionId, metric: "followers", from, to }, null, ctx);
     const series = arr(trend?.series ?? trend).map((p: any) => num(p?.value)).filter((v): v is number => v !== null);
     if (trend?.firstSnapshotAt && !balance.dataSince) balance.dataSince = String(trend.firstSnapshotAt).slice(0, 10);
     if (series.length >= 2 && series[0] !== 0) {
@@ -177,16 +183,16 @@ function pullFanArc(all: Ev[], champions: Patch["champions"], from: string, to: 
 }
 
 /* ---------- meta: paid sentiment skill when available, always-on comment mining otherwise ---------- */
-async function pullMeta(from: string, to: string, all: Ev[]): Promise<{ meta: Patch["meta"]; derived: boolean }> {
+async function pullMeta(from: string, to: string, all: Ev[], ctx?: SessionCtx): Promise<{ meta: Patch["meta"]; derived: boolean }> {
   try {
     const job: any = await safeCall("trigger_skill", {
       skill: "sentiment-cross-platform",
       instructions: `Analyze community sentiment for ${from} to ${to}. Return trend, positive/negative drivers, recurring questions, key insights, recommended actions.`,
-    }, null);
+    }, null, ctx);
     const id = job?.executionId ?? job?.id;
     if (id) {
       await pace();
-      const done: any = await pollJob("check_skill_generation", { executionId: id }, { timeoutMs: 100_000, intervalMs: 9000 });
+      const done: any = await pollJob("check_skill_generation", { executionId: id }, { timeoutMs: 100_000, intervalMs: 9000 }, ctx);
       const a = done?.analysis ?? done?.result ?? done;
       const summary = str(a?.summary ?? a?.keyInsights ?? a?.insights);
       if (summary || arr(a?.drivers).length) {
@@ -211,9 +217,11 @@ async function pullMeta(from: string, to: string, all: Ev[]): Promise<{ meta: Pa
   // Derived mode: mine the actual community voice (works with 0 credits)
   const win = all.filter((e) => inWindow(e.at, from, to) && e.text);
   const span = dayMs(to) - dayMs(from) + 864e5;
-  const prev = all.filter((e) => inWindow(e.at, isoDay(dayMs(from) - span), isoDay(dayMs(from) - 864e5))).length;
+  // denominators must match: text-bearing events both windows, or the ratio lies
+  const prev = all.filter((e) => inWindow(e.at, isoDay(dayMs(from) - span), isoDay(dayMs(from) - 864e5)) && e.text).length;
   const ratio = prev > 0 ? win.length / prev : null;
-  const trend = ratio === null ? (win.length > 0 ? "rising" : "unknown") : ratio > 1.1 ? "rising" : ratio < 0.9 ? "cooling" : "stable";
+  // no prior window = no basis for momentum — say "unknown", not "rising" (honest first patch)
+  const trend = ratio === null ? "unknown" : ratio > 1.1 ? "rising" : ratio < 0.9 ? "cooling" : "stable";
 
   const clean = (t: string) => t.replace(/^@\S+\s*/, "").trim();
   const questions = [...new Set(win.map((e) => clean(e.text)).filter((t) => t.includes("?") && t.length < 180))].slice(0, 5);
@@ -239,9 +247,9 @@ async function pullMeta(from: string, to: string, all: Ev[]): Promise<{ meta: Pa
   };
 }
 
-async function pullGuardrails(): Promise<string[]> {
+async function pullGuardrails(ctx?: SessionCtx): Promise<string[]> {
   const g: string[] = ["Never auto-sends: all content awaits human approval (send_inbox_message excluded by design)"];
-  const mem = arr((await safeCall("search_memories", { query: "content restrictions, off-limits topics, community preferences, agreed facts" }, null))?.memories ?? []);
+  const mem = arr((await safeCall("search_memories", { query: "content restrictions, off-limits topics, community preferences, agreed facts" }, null, ctx))?.memories ?? []);
   if (mem.length === 0) g.push("No stored content restrictions found");
   for (const m of mem.slice(0, 5)) g.push(`Respects memory: ${str(m?.text ?? m)}`);
   return g;
@@ -255,7 +263,9 @@ function composeAnnouncement(p: Omit<Patch, "announcement">, voice: any, rewind:
   const buff = p.balance.buffs[0] ? `${p.balance.buffs[0].metric} ${p.balance.buffs[0].delta} · ${p.balance.buffs[0].note ?? p.balance.buffs[0].platform}`.trim() : null;
   const label = rewind ? `community rewind` : `week v${p.version}`;
   const firstLine = p.fanOfThePatch ? `🌟 Fan of the Patch: ${p.fanOfThePatch.name}` : null;
-  const x = `${e("📋 ")}Patch Notes v${p.version} — ${label}\n\n${buff ? `📈 ${buff}\n` : ""}${p.meta.trend !== "unknown" ? `🧭 community meta: ${p.meta.trend}\n` : ""}${champLine ? `🏆 Rising champions: ${champLine}\n` : ""}${firstLine ? `${firstLine}\n` : ""}\nFull patch notes in replies 👇`.slice(0, 280);
+  const xFull = `${e("📋 ")}Patch Notes v${p.version} — ${label}\n\n${buff ? `📈 ${buff}\n` : ""}${p.meta.trend !== "unknown" ? `🧭 community meta: ${p.meta.trend}\n` : ""}${champLine ? `🏆 Rising champions: ${champLine}\n` : ""}${firstLine ? `${firstLine}\n` : ""}\nFull patch notes in replies 👇`;
+  // Array.from slices by code point — never split an emoji surrogate pair (and stay under X's 280 with margin)
+  const x = Array.from(xFull).slice(0, 270).join("");
   return {
     x,
     discordEmbed: {
@@ -278,11 +288,11 @@ export async function generatePatch(req: PatchRequest): Promise<Patch> {
   resetCallLog();
 
   stage("pulling full community activity (pagination)");
-  const all = await fetchAllEvents(); await pace();
+  const { events: all, capped: feedCapped } = await fetchAllEvents(req.ctx); await pace();
   stage(`rebuilt true timestamps for ${all.length} events — slicing window`);
 
   stage("reading account analytics + follower trends");
-  const balance = await pullBalance(req.from, req.to, all); await pace();
+  const balance = await pullBalance(req.from, req.to, all, req.ctx); await pace();
 
   stage(`ranking fans ${req.from} → ${req.to}`);
   const champions = pullChampions(all, req.from, req.to, maxChampions);
@@ -291,16 +301,17 @@ export async function generatePatch(req: PatchRequest): Promise<Patch> {
   const fanOfThePatch = pullFanArc(all, champions, req.from, req.to);
 
   stage("running sentiment skill (1 credit) — mining comments as backup");
-  const { meta, derived } = await pullMeta(req.from, req.to, all); await pace();
+  const { meta, derived } = await pullMeta(req.from, req.to, all, req.ctx); await pace();
 
   stage("checking community memories");
-  const guardrails = await pullGuardrails(); await pace();
+  const guardrails = await pullGuardrails(req.ctx); await pace();
 
   stage("loading brand voice");
-  const voice = await safeCall("get_brand_voice", {}, {});
+  const voice = await safeCall("get_brand_voice", {}, {}, req.ctx);
 
   const rewind = new Date(req.to) < new Date(Date.now() - 2 * 864e5);
   if (derived) guardrails.push("Meta report derived from real community comments (sentiment skill unavailable/blocked — 0 extra credits burned)");
+  if (feedCapped) guardrails.push("Activity feed exceeded 500 events — fetch capped; numbers floor, not exact");
   if (all.some((e) => e.rebuilt)) guardrails.push("Timeline rebuilt from post IDs: FanBase backfill stamps events with ingestion time — we restore true dates");
   if (rewind) guardrails.push("Rewind patch: historical window reconstructed from backfilled activity");
   if (balance.dataSince && balance.buffs.length === 0 && balance.nerfs.length === 0)
@@ -324,20 +335,24 @@ export async function generatePatch(req: PatchRequest): Promise<Patch> {
 }
 
 /* ---------- the diff: our moat ---------- */
+// match champions by stable identity (clusterId), falling back to name — a display-name
+// change must not make one fan appear as both "fallen" and "new"
+const cId = (c: { clusterId?: string; name: string }) => c.clusterId ?? c.name.toLowerCase();
+
 export function diffPatches(prev: Patch, curr: Patch): PatchDiff {
-  const prevNames = new Set(prev.champions.map((c) => c.name));
-  const currNames = new Set(curr.champions.map((c) => c.name));
+  const prevIds = new Set(prev.champions.map(cId));
+  const currIds = new Set(curr.champions.map(cId));
   let biggestRiser: PatchDiff["biggestRiser"];
   for (const c of curr.champions) {
-    const old = prev.champions.find((p) => p.name === c.name);
+    const old = prev.champions.find((p) => cId(p) === cId(c));
     if (old && old.rank - c.rank > (biggestRiser?.places ?? 0)) biggestRiser = { name: c.name, places: old.rank - c.rank };
   }
   const key = (b: { metric: string; platform: string }) => `${b.metric}:${b.platform}`;
   const prevNerfs = new Set(prev.balance.nerfs.map(key));
   return {
     from: prev.version, to: curr.version,
-    newChampions: curr.champions.filter((c) => !prevNames.has(c.name)).map((c) => c.name),
-    fallenChampions: prev.champions.filter((c) => !currNames.has(c.name)).map((c) => c.name),
+    newChampions: curr.champions.filter((c) => !prevIds.has(cId(c))).map((c) => c.name),
+    fallenChampions: prev.champions.filter((c) => !currIds.has(cId(c))).map((c) => c.name),
     biggestRiser,
     metaShift: prev.meta.trend !== curr.meta.trend ? `${prev.meta.trend} → ${curr.meta.trend}` : undefined,
     buffsResolved: curr.balance.buffs.map(key).filter((k) => prevNerfs.has(k)),

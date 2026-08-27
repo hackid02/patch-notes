@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { listPatchVersions, loadPatch } from "@/lib/store";
-import { isConnected } from "@/lib/auth";
+import { hasOwnerSession } from "@/lib/auth";
+import { sessionFromCookies } from "@/lib/session";
 import GenerateForm from "@/components/GenerateForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import PatchNotes from "@/components/PatchNotes";
@@ -21,11 +22,15 @@ export default async function Home({
 }) {
   const sp = await searchParams;
   const jar = await cookies();
-  const connected = isConnected() && !!jar.get("fb_connected");
-  const versions = listPatchVersions();
+  // web session (any org) OR legacy owner session (local dev)
+  const connected = !!sessionFromCookies((n) => jar.get(n)?.value) || hasOwnerSession(jar.get("fb_connected")?.value);
+  const readOnly = process.env.NEXT_PUBLIC_DEMO_READONLY === "1";
+  // real generated series wins; on a fresh clone fall back to fixtures so the product is reachable with zero credentials
+  const real = listPatchVersions();
+  const usingFixtures = real.length === 0;
+  const versions = usingFixtures ? ["1.0", "1.1"] : real;
   const latest = versions[versions.length - 1];
   const latestPatch = latest ? loadPatch(latest) : null;
-  // the real series (connected org) — fixtures only appear via loadPatch fallback, never listed
   const series = versions.map((v) => loadPatch(v)).filter((p): p is NonNullable<typeof p> => !!p);
   const seriesDiffs = series.slice(1).map((p, i) => diffPatches(series[i], p));
 
@@ -61,9 +66,18 @@ export default async function Home({
         )}
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3 animate-fade-up" style={{ animationDelay: "120ms" }}>
-          {connected ? (
-            <span className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 font-display font-bold text-emerald-300">
-              ✓ FanBase connected
+          {readOnly ? (
+            <span className="rounded-xl border border-brand/40 bg-brand/10 px-6 py-3 font-display text-sm font-bold text-brand-soft">
+              👀 read-only showcase — built from a live FanBase
+            </span>
+          ) : connected ? (
+            <span className="flex items-center gap-3">
+              <span className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 font-display font-bold text-emerald-300">
+                ✓ FanBase connected
+              </span>
+              <a href="/api/auth/logout" className="text-xs text-zinc-600 hover:text-zinc-300 transition underline underline-offset-2">
+                disconnect
+              </a>
             </span>
           ) : (
             <a
@@ -84,9 +98,17 @@ export default async function Home({
         </div>
 
         <div className="mt-10 max-w-lg mx-auto animate-fade-up" style={{ animationDelay: "200ms" }}>
-          {connected && <GenerateForm />}
-          {!connected && (
-            <p className="text-xs text-zinc-600">Sample data on the demo pages for now · connect to generate from your real community.</p>
+          {connected && !readOnly && <GenerateForm />}
+          {!connected && !readOnly && (
+            <p className="text-xs text-zinc-600">
+              Connect your FanBase and generate from <span className="text-zinc-400 font-semibold">your</span> community in ~60s — free reads, ~1 skill credit, your own org's credits.
+              The patches below were generated live from the owner's FanBase.
+            </p>
+          )}
+          {readOnly && (
+            <p className="text-xs text-zinc-600">
+              Every patch here was generated live from the owner's FanBase — open one and check the MCP receipt at the bottom.
+            </p>
           )}
         </div>
 
@@ -108,7 +130,7 @@ export default async function Home({
       {latestPatch && (
         <div className="relative mx-auto mt-8 max-w-3xl px-6 pb-20 text-left">
           <p className="font-mono text-[10px] font-bold tracking-[0.25em] text-zinc-500 uppercase text-center mb-4">
-            the artifact{connected ? " · live from your FanBase" : " · sample data"}
+            the artifact{usingFixtures ? " · sample data" : " · live from real FanBase data"}
           </p>
           <div className="relative overflow-hidden rounded-3xl border border-line bg-panel">
             <div className="max-h-[560px] overflow-hidden">

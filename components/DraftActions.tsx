@@ -4,8 +4,16 @@ import { useRef, useState } from "react";
 /**
  * Inline approval for the announcement drafts — arm-to-confirm (no native dialogs).
  * First click arms the button ("confirm?"), second click ships within 5s.
+ * Owner: posts from an archived patch version. Guest preview: posts the just-generated
+ * draft payload — spending the GUEST's own org credits, never the host's.
  */
-export default function DraftActions({ version }: { version: string }) {
+export default function DraftActions({
+  version,
+  draft,
+}: {
+  version?: string;
+  draft?: { announcement: unknown; versionLabel: string };
+}) {
   const [log, setLog] = useState("");
   const [armed, setArmed] = useState<"x" | "discord" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -13,7 +21,7 @@ export default function DraftActions({ version }: { version: string }) {
 
   function arm(target: "x" | "discord") {
     setArmed(target);
-    setLog(target === "x" ? "press again to schedule (uses credits)" : "press again to post to #announcements (uses credits)");
+    setLog(target === "x" ? "press again to schedule (uses your org's credits)" : "press again to post to #announcements (uses your org's credits)");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setArmed(null), 5000);
   }
@@ -24,7 +32,11 @@ export default function DraftActions({ version }: { version: string }) {
       const res = await fetch("/api/announce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version, target, mode: target === "x" ? "schedule" : "post_now" }),
+        body: JSON.stringify(
+          draft
+            ? { draft, target, mode: target === "x" ? "schedule" : "post_now" }
+            : { version, target, mode: target === "x" ? "schedule" : "post_now" }
+        ),
       });
       const json = await res.json();
       setLog(res.ok

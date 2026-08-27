@@ -59,3 +59,26 @@ components/HallOfFame.tsx  the series strip — the compounding moat, visible
 ```
 
 `send_inbox_message` is deliberately absent from every code path: all content awaits human approval.
+
+## Multi-user connect (the "try it with YOUR FanBase" path)
+
+The public deployment accepts any creator's own FanBase org — statelessly:
+
+- **OAuth 2.1 + PKCE + DCR** per the fanbase-app-builder spec; the public origin's client is pinned via `FANBASE_CLIENT_ID`
+- **Zero server-side credential storage.** Tokens are AES-256-GCM encrypted into the visitor's own HttpOnly/Secure/SameSite=Lax cookies (`lib/session.ts`); refresh rotation re-encrypts onto the response
+- **Credit isolation by design.** A guest's Generate/Post spends *their* org's credits (consented at OAuth) — the host's credits are unreachable from the public URL
+- **Guests get live previews**, owners get archival + versioning + diffs. `NEXT_PUBLIC_DEMO_READONLY=1` is a one-env rollback to showcase-only mode
+
+### Deploy your own
+
+```
+vercel deploy        # or any Next.js host
+env: FANBASE_CLIENT_ID=<dcr for your origin>   SESSION_SECRET=<openssl rand -hex 32>
+```
+
+Self-hosted (owner mode): `node scripts/oauth-handshake.mjs` writes the local token file — no envs needed.
+
+## Security
+
+Went through an independent adversarial review before submission: **24 findings (4 P0), all 24 fixed** — full triage in [REVIEW-RESPONSE.md](./REVIEW-RESPONSE.md). Session gates are timing-safe, POSTs require exact Origin-host equality, patch versions are path-traversal-proof, and announce retries fire only on schema rejection (a flaky network can never double-post to your community).
+

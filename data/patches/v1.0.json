@@ -1,0 +1,209 @@
+{
+  "version": "1.0",
+  "window": {
+    "from": "2026-08-11",
+    "to": "2026-08-17"
+  },
+  "generatedAt": "2026-08-26T13:41:29.102Z",
+  "meta": {
+    "trend": "rising",
+    "summary": "92 community interactions from 30 distinct voices (2026-08-11 → 2026-08-17). First window on record — momentum tracking starts here. 2 question threads need answers — that's next week's content.",
+    "drivers": [
+      {
+        "label": "“WoW guild bank heist, not even a trade. New officer spent two months being helpf…”",
+        "direction": "positive",
+        "detail": "reply by Galaxylonerr🚶🏾‍♂️ on twitter — 2026-08-17"
+      },
+      {
+        "label": "“Playing devil's advocate on wayfinding: some of the best communities I have join…”",
+        "direction": "positive",
+        "detail": "reply by F_kay on twitter — 2026-08-17"
+      }
+    ],
+    "recurringQuestions": [
+      "I write threads breaking down whitepapers nobody reads. Feels like the reader door but part of me wants to build. Can you switch doors later or is the sorting permanent?",
+      "I run a small discord for a niche game, mostly keeping the peace and onboarding new folks. Which door is that?"
+    ],
+    "recommendedActions": [
+      "Answer the recurring questions in a dedicated post — they are this week's content fuel"
+    ]
+  },
+  "balance": {
+    "buffs": [],
+    "nerfs": [],
+    "dataSince": "2026-08-22"
+  },
+  "champions": [
+    {
+      "rank": 1,
+      "name": "shahidivibez.TBBB",
+      "clusterId": "03e62b67-4ba0-4af8-ab66-0a37c4f2fb5f",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 8
+    },
+    {
+      "rank": 2,
+      "name": "OluwashemzyX",
+      "clusterId": "8c9d1024-fef4-4fea-b0d9-be655ce8ce23",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 8
+    },
+    {
+      "rank": 3,
+      "name": "Unborn7G",
+      "clusterId": "b22a2136-360c-41b2-9497-5d4a1857350f",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 8
+    },
+    {
+      "rank": 4,
+      "name": "Jeshiling",
+      "clusterId": "7ef2a6bc-fd88-4995-bedb-11b8e4a82e46",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 5
+    },
+    {
+      "rank": 5,
+      "name": "Maoji sama",
+      "clusterId": "d73bb7a1-aaa1-46fe-b6fe-d5d54ac5e5bb",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 5
+    },
+    {
+      "rank": 6,
+      "name": "Galaxylonerr🚶🏾‍♂️",
+      "clusterId": "f7cbba27-a28a-4a60-b539-143b5970277b",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 4
+    },
+    {
+      "rank": 7,
+      "name": "Adedayo Seyifunmi (Ø,G)",
+      "clusterId": "9a9e3787-22f6-46f1-94a5-97645062b7b0",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 4
+    },
+    {
+      "rank": 8,
+      "name": "4izen",
+      "clusterId": "268db056-e9a0-4ee5-abe0-40702d91db8e",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 4
+    },
+    {
+      "rank": 9,
+      "name": "Itachi Uchiha",
+      "clusterId": "a9dd5ffe-8c6e-48ca-9a72-59943ba6b305",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 4
+    },
+    {
+      "rank": 10,
+      "name": "Marshall🦇",
+      "clusterId": "dfaa5717-354f-4cda-80b6-fcf4709b70ba",
+      "platforms": [
+        "twitter"
+      ],
+      "score": 3
+    }
+  ],
+  "fanOfThePatch": {
+    "name": "shahidivibez.TBBB",
+    "clusterId": "03e62b67-4ba0-4af8-ab66-0a37c4f2fb5f",
+    "arc": [
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “Reading this as a former guild officer hurts. I was the judge. I was as fair as I knew how…”"
+      },
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “Speedrunning communities live this constantly. The rules say no major glitches and then th…”"
+      },
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “A building with three doors still has one architect though. Who decided the lanes, and can…”"
+      },
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “The 46 validators number cuts both ways. Small enough to feel early, small enough to worry…”"
+      },
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “The one that still stings: cross-game trade. My skins in one game for his gold in another.…”"
+      },
+      {
+        "when": "2026-08-17",
+        "event": "reply on twitter: “Rocket League credits for a painted item, deal done in a party chat with zero witnesses. H…”"
+      }
+    ],
+    "why": "shahidivibez.TBBB led the community this window — 8 interactions on twitter. Signature moment: “The retention money detail is the underrated one here. Construction figured out that the person holding the last payment…”"
+  },
+  "guardrails": [
+    "Never auto-sends: all content awaits human approval (send_inbox_message excluded by design)",
+    "No stored content restrictions found",
+    "Meta report derived from real community comments (sentiment skill unavailable/blocked — 0 extra credits burned)",
+    "Timeline rebuilt from post IDs: FanBase backfill stamps events with ingestion time — we restore true dates",
+    "Rewind patch: historical window reconstructed from backfilled activity",
+    "Follower snapshots began 2026-08-22 — KPI buffs/nerfs unlock once two snapshots exist"
+  ],
+  "stats": {
+    "fansRanked": 10,
+    "questionsSurfaced": 2,
+    "platformsCovered": 1
+  },
+  "provenance": [
+    "query_activity · 238ms ✓",
+    "get_account_analytics · 180ms ✓",
+    "get_analytics_trend · 182ms ✓",
+    "trigger_skill · 869ms ✓",
+    "check_skill_generation · 195ms ✓",
+    "check_skill_generation · 220ms ✓",
+    "check_skill_generation · 226ms ✓",
+    "check_skill_generation · 236ms ✓",
+    "check_skill_generation · 207ms ✓",
+    "check_skill_generation · 275ms ✓",
+    "check_skill_generation · 215ms ✓",
+    "check_skill_generation · 200ms ✓",
+    "check_skill_generation · 216ms ✓",
+    "check_skill_generation · 224ms ✓",
+    "check_skill_generation · 201ms ✓",
+    "check_skill_generation · 224ms ✓",
+    "search_memories · 384ms ✓",
+    "get_brand_voice · 177ms ✓"
+  ],
+  "announcement": {
+    "x": "📋 Patch Notes v1.0 — community rewind\n\n🧭 community meta: rising\n🏆 Rising champions: shahidivibez.TBBB, OluwashemzyX, Unborn7G\n🌟 Fan of the Patch: shahidivibez.TBBB\n\nFull patch notes in replies 👇",
+    "discordEmbed": {
+      "title": "📋 Patch Notes v1.0",
+      "description": "92 community interactions from 30 distinct voices (2026-08-11 → 2026-08-17). First window on record — momentum tracking starts here. 2 question threads need answers — that's next week's content.",
+      "fields": [
+        {
+          "name": "🏆 Rising Champions",
+          "value": "shahidivibez.TBBB, OluwashemzyX, Unborn7G"
+        },
+        {
+          "name": "🌟 Fan of the Patch",
+          "value": "shahidivibez.TBBB"
+        }
+      ]
+    }
+  }
+}
